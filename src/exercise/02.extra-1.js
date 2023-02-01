@@ -30,14 +30,14 @@ function asyncReducer(state, action) {
     }
   }
 }
-
-function useAsync(asyncCallback, initialState, dependencies) {
+// status can be set to pending bc the pokemonName can't be null anymore
+// asyncCallback is the depArray, cause it only gets recreated if the pokemonName is changed
+function useAsync(asyncCallback) {
   const [state, dispatch] = React.useReducer(asyncReducer, {
-    status: 'idle',
+    status: 'pending',
     // 🐨 this will need to be "data" instead of "pokemon"
     data: null,
     error: null,
-    ...initialState,
   })
 
   React.useEffect(() => {
@@ -60,7 +60,7 @@ function useAsync(asyncCallback, initialState, dependencies) {
     // 🐨 because of limitations with ESLint, you'll need to ignore
     // the react-hooks/exhaustive-deps rule. We'll fix this in an extra credit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, dependencies)
+  }, asyncCallback)
 
   return state
 }
@@ -71,21 +71,17 @@ function PokemonInfo({pokemonName}) {
   // 💰 If you want some help, here's the function signature (or delete this
   // comment really quick if you don't want the spoiler)!
   // function useAsync(asyncCallback, initialState, dependencies) {/* code in here */}
+  // 💀 asyncCallback without useCallback is BAD 💀 bc this gets created NEW every single render
 
+  const asyncCallback = React.useCallback(() => {
+    if (!pokemonName) {
+      return
+    }
+    return fetchPokemon(pokemonName)
+  }, [pokemonName])
 
-
-  
   // 🐨 here's how you'll use the new useAsync hook you're writing:
-  const state = useAsync(
-    () => {
-      if (!pokemonName) {
-        return
-      }
-      return fetchPokemon(pokemonName)
-    },
-    {status: pokemonName ? 'pending' : 'idle'},
-    [pokemonName],
-  )
+  const state = useAsync(asyncCallback)
   // 🐨 this will change from "pokemon" to "data"
   const {data: pokemon, status, error} = state
 
